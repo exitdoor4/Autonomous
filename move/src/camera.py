@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import threading
 import datetime
-
+import time
 import rospkg
 
 rospack = rospkg.RosPack()
@@ -37,7 +37,7 @@ def getKey():
 
         
 def moveThread():
-        global start_flag, current_speed,twist,pub
+        global  current_speed,twist,pub,traffic_light_flag,stop_line_flag
         speed = 0
         while True:
                 key = getKey()
@@ -45,6 +45,15 @@ def moveThread():
                 if key == 'q':
                         speed = -0.11
                         print("시작")
+                        if traffic_light_flag == 1 :
+                                speed = -0.11
+                                print("초록불")
+                        elif traffic_light_flag == 0 :
+                                print("빨간불")
+                                if stop_line_flag == 0 :
+                                        time.sleep(1)
+                                        speed = 0
+                               
                 elif key == 'w':
                         speed = 0
                         print("멈춤")
@@ -52,6 +61,8 @@ def moveThread():
                         print("끝")
                         break
                 
+                
+
                 if current_speed != speed:
                         print("속도" , speed)
                         current_speed = speed
@@ -159,11 +170,13 @@ def image_callback(ros_image_compressed):
                         area_r = cv2.contourArea(contour)
                         area_R = f"Red area = {area_r:.1f}"
                         print(area_R)
+                        traffic_light_flag = 0
                 
                 for i, contour in enumerate(contours_green):
                         area_g = cv2.contourArea(contour)
                         area_G = f"green area = {area_g:.1f}"
                         print(area_G)
+                        traffic_light_flag =1
                 # if int(area_r) > 1300:
                 #     print('stop')
                 
@@ -189,7 +202,8 @@ if __name__ == '__main__':
         # 로봇 제어 전역변수 
         start_flag = 1
         current_speed =0
- 
+        traffic_light_flag = 1 #빨간불:0, 초록불:1
+        stop_line_flag = 1 #정지선 안 보임:0, 정지선 보임:1
         # 카메라 처리 
         rospy.init_node('autonomous_move')
         image_topic = "/raspicam_node/image/compressed"
